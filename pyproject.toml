@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spliceledger"
+version = "0.1.0"
+description = "Retime external SRT captions after video cuts and audit what each cut removed."
+requires-python = ">=3.11"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = []
+authors = [{ name = "SpliceLedger contributors" }]
+keywords = ["subtitles", "accessibility", "captions", "srt", "retiming"]
+classifiers = ["Environment :: Console", "Programming Language :: Python :: 3"]
+
+[project.scripts]
+spliceledger = "spliceledger.cli:main"
+
+[project.urls]
+Source = "https://github.com/canibeyours2001-ui/spliceledger"
+Issues = "https://github.com/canibeyours2001-ui/spliceledger/issues"
+
+[tool.setuptools]
+packages = ["spliceledger"]
