@@ -17,6 +17,7 @@ class FormatTests(unittest.TestCase):
     def test_decimal_rounding(self):
         for text, result in [
             ("0.000499999", 0),
+            ("0.03336666666666667", 33),
             ("0.00050", 1),
             ("1.9999", 2000),
             ("359999.999", 359999999),
@@ -31,7 +32,7 @@ class FormatTests(unittest.TestCase):
             "inf",
             "-1",
             "1e8",
-            "1.1234567890",
+            "1." + "9" * 25,
             "360000",
             "၃",
             "9" * 1000,
@@ -51,18 +52,28 @@ class FormatTests(unittest.TestCase):
             "0,0",
             "3,2",
             "0,1\n0.5,2",
-            "0,1,",
             '0,1,"unclosed',
             "0,0.0003",
             "1,",
             "0,1\n,2",
             "0,1,2,3",
         ):
-            if sample == "0,1,":
-                self.assertEqual(parse_keeps(sample), [(0, 1000)])
-                continue
             with self.subTest(sample=sample), self.assertRaises(InputError):
                 parse_keeps(sample)
+
+    def test_losslesscut_export_header_tags_and_open_bounds(self):
+        text = (
+            'Start,End,Name,Speaker\nundefined,0.03336666666666667,"hi, there",A\n'
+            "1.001,undefined,,B\n"
+        )
+        self.assertEqual(parse_keeps(text, 2000), [(0, 33), (1001, 2000)])
+        for invalid in (
+            "Start,End,Name,Speaker\n0,1,name",
+            "Start,End,Name\n",
+            "Start,End,Name\nStart,End,Name\n0,1,cue",
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(InputError):
+                parse_keeps(invalid)
 
     def test_duration_and_record_limits(self):
         with self.assertRaises(InputError):

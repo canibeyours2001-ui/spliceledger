@@ -13,7 +13,7 @@ MAX_MS = 359_999_999  # 99:59:59,999
 STAMP = r"([0-9]{2}):([0-5][0-9]):([0-5][0-9]),([0-9]{3})"
 TIMING = re.compile(rf"{STAMP}[ \t]+-->[ \t]+{STAMP}")
 BLOCK_BREAK = re.compile(r"\n[ \t]*\n(?:[ \t]*\n)*")
-SECONDS = re.compile(r"([0-9]{1,6})(?:\.([0-9]{1,9}))?")
+SECONDS = re.compile(r"([0-9]{1,6})(?:\.([0-9]{1,24}))?")
 
 
 class InputError(ValueError):
@@ -89,7 +89,7 @@ def seconds_ms(value: str) -> int:
     match = SECONDS.fullmatch(value.strip())
     if match is None:
         raise InputError(
-            "expected nonnegative decimal seconds with up to 9 decimal places"
+            "expected nonnegative decimal seconds with up to 24 decimal places"
         )
     digits = (match[2] or "").ljust(4, "0")
     result = int(match[1]) * 1000 + int(digits[:3]) + int(digits[3] >= "5")
@@ -99,20 +99,34 @@ def seconds_ms(value: str) -> int:
 
 
 def parse_keeps(text: str, duration: int | None = None) -> list[tuple[int, int]]:
-    """Read seconds-based, headerless keep ranges; coalesce touching ranges."""
+    """Read plain keep ranges or a LosslessCut seconds CSV with optional tag columns."""
     keeps: list[tuple[int, int]] = []
     reader = csv.reader(io.StringIO(text), strict=True)
     count = 0
+    header_width = None
     try:
         for row in reader:
             if not row:
                 continue
+            if (
+                count == 0
+                and header_width is None
+                and row[:3] == ["Start", "End", "Name"]
+            ):
+                header_width = len(row)
+                continue
             count += 1
             if count > MAX_RECORDS:
                 raise InputError("more than 50000 keep ranges")
-            if len(row) not in (2, 3):
+            if header_width is not None and len(row) != header_width:
+                raise InputError("row width differs from the LosslessCut header")
+            if header_width is None and len(row) not in (2, 3):
                 raise InputError("expected start,end or start,end,label")
             left, right = (field.strip() for field in row[:2])
+            if header_width is not None:
+                # The seconds exporter uses JavaScript String() for open endpoints.
+                left = "" if left == "undefined" else left
+                right = "" if right == "undefined" else right
             start = 0 if not left and not keeps else seconds_ms(left)
             if right:
                 end = seconds_ms(right)

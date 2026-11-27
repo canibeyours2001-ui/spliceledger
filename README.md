@@ -30,6 +30,7 @@ An omitted line leaves a caption gap. Listen to each flagged point and add the w
 Export the **kept** segments from your editor as a seconds-based CSV, in playback order. For a silence-removal pipeline, save the retained intervals used by its renderer. If you only have the finished video and no edit list, SpliceLedger cannot infer the cuts. For LosslessCut choose its numeric seconds CSV, and use the actual cut points if the export snapped to keyframes.
 
 ```csv
+Start,End,Name
 0,3,Introduction
 6,9,Lesson
 ```
